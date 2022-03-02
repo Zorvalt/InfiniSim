@@ -57,6 +57,10 @@
 #include <algorithm>
 #include <cmath> // std::pow
 
+// additional includes for 'saveScreenshot()' function
+#include <date/date.h>
+#include <chrono>
+
 /*********************
  *      DEFINES
  *********************/
@@ -64,6 +68,39 @@
 /**********************
  *      TYPEDEFS
  **********************/
+// copied from lv_drivers/display/monitor.c to get the SDL_Window for the InfiniTime screen
+extern "C"
+{
+typedef struct {
+  SDL_Window * window;
+  SDL_Renderer * renderer;
+  SDL_Texture * texture;
+  volatile bool sdl_refr_qry;
+#if MONITOR_DOUBLE_BUFFERED
+  uint32_t * tft_fb_act;
+#else
+  uint32_t tft_fb[LV_HOR_RES_MAX * LV_VER_RES_MAX];
+#endif
+}monitor_t;
+extern monitor_t monitor;
+}
+
+void saveScreenshot()
+{
+  auto now = std::chrono::system_clock::now();
+  std::string screenshot_filename = date::format("InfiniSim_%F_%H%M%S.bmp", date::floor<std::chrono::seconds>(now));
+  //std::string screenshot_filename = "InfiniSim.bmp";
+
+  const int width = 240;
+  const int height = 240;
+  auto renderer = monitor.renderer;
+  const Uint32 format = SDL_PIXELFORMAT_RGB888;
+  SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 24, format);
+  SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);
+  SDL_SaveBMP(surface, screenshot_filename.c_str());
+  SDL_FreeSurface(surface);
+  std::cout << "InfiniSim: Screenshot created: " << screenshot_filename << std::endl;
+}
 
 /**********************
  *  STATIC PROTOTYPES
@@ -450,6 +487,7 @@ public:
       debounce('p', 'P', state[SDL_SCANCODE_P], key_handled_p);
       debounce('s', 'S', state[SDL_SCANCODE_S], key_handled_s);
       debounce('h', 'H', state[SDL_SCANCODE_H], key_handled_h);
+      debounce('i', 'I', state[SDL_SCANCODE_I], key_handled_i);
       // screen switcher buttons
       debounce('1', '!'+1, state[SDL_SCANCODE_1], key_handled_1);
       debounce('2', '!'+2, state[SDL_SCANCODE_2], key_handled_2);
@@ -525,6 +563,8 @@ public:
         }
       } else if (key == 'H') {
         heartRateController.Stop();
+      } else if (key == 'i') {
+        saveScreenshot();
       } else if (key >= '0' && key <= '9') {
         this->switch_to_screen(key-'0');
       } else if (key >= '!'+0 && key <= '!'+9) {
@@ -679,6 +719,7 @@ private:
     bool key_handled_p = false; // p ... enable print memory usage, P ... disable print memory usage
     bool key_handled_s = false; // s ... increase step count, S ... decrease step count
     bool key_handled_h = false; // h ... set heartrate running, H ... stop heartrate
+    bool key_handled_i = false; // i ... take screenshot, I ... not assigned
     // numbers from 0 to 9 to switch between screens
     bool key_handled_1 = false;
     bool key_handled_2 = false;
