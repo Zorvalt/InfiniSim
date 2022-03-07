@@ -60,6 +60,9 @@
 // additional includes for 'saveScreenshot()' function
 #include <date/date.h>
 #include <chrono>
+#if defined(WITH_PNG)
+#include <libpng16/png.h>
+#endif
 
 /*********************
  *      DEFINES
@@ -88,17 +91,76 @@ extern monitor_t monitor;
 void saveScreenshot()
 {
   auto now = std::chrono::system_clock::now();
-  std::string screenshot_filename = date::format("InfiniSim_%F_%H%M%S.bmp", date::floor<std::chrono::seconds>(now));
-  //std::string screenshot_filename = "InfiniSim.bmp";
+  // TODO: timestamped png filename
+  //std::string screenshot_filename_base = date::format("InfiniSim_%F_%H%M%S.png", date::floor<std::chrono::seconds>(now));
+  std::string screenshot_filename_base = "InfiniSim";
 
   const int width = 240;
   const int height = 240;
   auto renderer = monitor.renderer;
+
+
+#if defined(WITH_PNG)
+  std::string screenshot_filename = screenshot_filename_base + ".png";
+
+  FILE * fp2 = fopen(screenshot_filename.c_str(), "wb");
+  if (!fp2) {
+    // dealing with error
+    return;
+  }
+  // 1. Create png struct pointer
+  png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!png_ptr){
+      // dealing with error
+  }
+  png_infop info_ptr = png_create_info_struct(png_ptr);
+  if (!info_ptr) {
+      png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+      // dealing with error
+  }
+  int bit_depth = 8;
+  png_init_io(png_ptr, fp2);
+  png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, \
+      PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, \
+      PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+  // 3. Convert 1d array to 2d array to be suitable for png struct
+  //    I assumed the original array is 1d
+  std::array<png_bytep, 240> row_pointers;
+  //png_bytepp row_pointers = (png_bytepp)png_malloc(png_ptr, sizeof(png_bytep) * height);
+  for (int i = 0; i < height; i++) {
+      row_pointers[i] = (png_bytep)png_malloc(png_ptr, width*4);
+  }
+  const Uint32 format = SDL_PIXELFORMAT_RGBA8888;
+  SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format);
+  SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);
+  png_bytep pixels = (png_bytep)surface->pixels;
+  for (int hi = 0; hi < height; hi++) {
+    for (int wi = 0; wi < width; wi++) {
+      int c = wi * 4;
+      row_pointers.at(hi)[wi*4+0] = pixels[hi*surface->pitch + wi*4 + 3]; // red
+      row_pointers.at(hi)[wi*4+1] = pixels[hi*surface->pitch + wi*4 + 2]; // greeen
+      row_pointers.at(hi)[wi*4+2] = pixels[hi*surface->pitch + wi*4 + 1]; // blue
+      row_pointers.at(hi)[wi*4+3] = 255; // alpha
+    }
+  }
+
+  // 4. Write png file
+  png_write_info(png_ptr, info_ptr);
+  png_write_image(png_ptr, row_pointers.data());
+  png_write_end(png_ptr, info_ptr);
+  png_destroy_write_struct(&png_ptr, &info_ptr);
+  fclose(fp2);
+
+  SDL_FreeSurface(surface);
+#else
+  std::string screenshot_filename = screenshot_filename_base + ".bmp";
   const Uint32 format = SDL_PIXELFORMAT_RGB888;
   SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 24, format);
   SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);
   SDL_SaveBMP(surface, screenshot_filename.c_str());
   SDL_FreeSurface(surface);
+#endif
   std::cout << "InfiniSim: Screenshot created: " << screenshot_filename << std::endl;
 }
 
