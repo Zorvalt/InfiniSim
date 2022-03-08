@@ -15,6 +15,7 @@
 //#undef max
 //#undef min
 #include "components/ble/BleController.h"
+#include "components/calendar/CalendarManager.h"
 #include "components/ble/NotificationManager.h"
 #include "components/datetime/DateTimeController.h"
 #include "components/fs/FS.h"
@@ -24,6 +25,7 @@ using namespace Pinetime::Controllers;
 
 NimbleController::NimbleController(Pinetime::System::SystemTask& systemTask,
                                    Pinetime::Controllers::Ble& bleController,
+                                   CalendarManager& calendarManager,
                                    DateTime& dateTimeController,
                                    Pinetime::Controllers::NotificationManager& notificationManager,
                                    Controllers::Battery& batteryController,

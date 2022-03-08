@@ -9,6 +9,7 @@
 //#undef min
 //#include "components/ble/AlertNotificationClient.h"
 #include "components/ble/AlertNotificationService.h"
+#include "components/calendar/CalendarManager.h"
 //#include "components/ble/BatteryInformationService.h"
 //#include "components/ble/CurrentTimeClient.h"
 //#include "components/ble/CurrentTimeService.h"
@@ -47,6 +48,7 @@ namespace Pinetime {
     public:
       NimbleController(Pinetime::System::SystemTask& systemTask,
                        Pinetime::Controllers::Ble& bleController,
+                       Controllers::CalendarManager& calendarManager,
                        DateTime& dateTimeController,
                        Pinetime::Controllers::NotificationManager& notificationManager,
                        Controllers::Battery& batteryController,
