@@ -166,6 +166,8 @@ target_sources(infinisim PUBLIC
   ${InfiniTime_DIR}/src/components/alarm/AlarmController.cpp
   ${InfiniTime_DIR}/src/components/ble/BleController.h
   ${InfiniTime_DIR}/src/components/ble/BleController.cpp
+  ${InfiniTime_DIR}/src/components/calendar/CalendarManager.h
+  ${InfiniTime_DIR}/src/components/calendar/CalendarManager.cpp
   ${InfiniTime_DIR}/src/components/datetime/DateTimeController.h
   ${InfiniTime_DIR}/src/components/datetime/DateTimeController.cpp
   ${InfiniTime_DIR}/src/components/settings/Settings.h
